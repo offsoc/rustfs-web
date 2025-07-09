@@ -72,18 +72,18 @@ export const configManager = {
     return null
   },
 
-  // 按优先级加载配置：config.json > localStorage > runtimeconfig
+  // 按优先级加载配置：localStorage > config.json > runtimeconfig
   async loadConfig(): Promise<RustFSConfig | null> {
-    // 首先尝试从 config.json 加载
-    const publicConfig = await this.loadPublicConfig()
-    if (publicConfig) {
-      return publicConfig
-    }
-
-    // 如果没有 config.json，尝试从 localStorage 加载
+    // 首先尝试从 localStorage 加载
     const storageConfig = this.loadStorageConfig()
     if (storageConfig) {
       return storageConfig
+    }
+
+    // 如果没有 localStorage 配置，尝试从 config.json 加载
+    const publicConfig = await this.loadPublicConfig()
+    if (publicConfig) {
+      return publicConfig
     }
 
     // 如果都没有，使用 runtimeconfig 作为默认值
@@ -112,14 +112,9 @@ export const configManager = {
     return !!config
   },
 
-  // 保存配置到 localStorage（只有当没有 public/config.json 时）
+  // 保存配置到 localStorage（现在总是允许保存以覆盖其他配置）
   async saveConfig(serverConfig: ServerConfig): Promise<boolean> {
     if (process.client) {
-      // 如果有 public/config.json，就不保存到 localStorage
-      if (await this.hasPublicConfig()) {
-        return false
-      }
-
       const config: RustFSConfig = {
         api: {
           baseURL: `${serverConfig.protocol}://${serverConfig.host}:${serverConfig.port}/rustfs/admin/v3`
@@ -147,5 +142,26 @@ export const configManager = {
   async hasValidConfig(): Promise<boolean> {
     const config = await this.loadConfig()
     return !!(config?.api?.baseURL)
+  },
+
+  // 获取当前配置的来源
+  async getConfigSource(): Promise<'localStorage' | 'config.json' | 'runtimeconfig' | null> {
+    // 按优先级检查配置来源
+    const storageConfig = this.loadStorageConfig()
+    if (storageConfig) {
+      return 'localStorage'
+    }
+
+    const publicConfig = await this.loadPublicConfig()
+    if (publicConfig) {
+      return 'config.json'
+    }
+
+    const runtimeConfig = this.loadRuntimeConfig()
+    if (runtimeConfig) {
+      return 'runtimeconfig'
+    }
+
+    return null
   }
 }

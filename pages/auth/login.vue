@@ -75,17 +75,15 @@ const handleLogin = async () => {
   const credentials = method.value === 'accessKeyAndSecretKey' ? accessKeyAndSecretKey.value : sts.value
 
   try {
-    // 使用 configManager 保存配置（如果有 public/config.json 则不保存）
-    const saved = await configManager.saveConfig({
+    // 保存配置到 localStorage
+    await configManager.saveConfig({
       protocol: serverConfig.value.protocol,
       host: serverConfig.value.host,
       port: serverConfig.value.port,
       region: serverConfig.value.region
     })
 
-    if (saved) {
-      message.success(t('Server configuration saved'))
-    }
+    message.success(t('Server configuration saved'))
 
     await auth.login(credentials)
     message.success(t('Login Success'))
@@ -168,57 +166,6 @@ const onUrlInput = () => {
           </div>
 
           <div class="mt-5 space-y-4">
-            <!-- 服务器配置折叠面板 -->
-            <div class="mb-2">
-              <div class="transition-all duration-300 ease-in-out">
-                <!-- 折叠时的卡片 -->
-                <div v-if="!expandedNames.includes('server-config')" @click="expandedNames = ['server-config']" class="w-full cursor-pointer">
-                  <div
-                    class="rounded border border-gray-200 dark:border-neutral-700 bg-gray-50 dark:bg-neutral-800 px-4 py-2 flex items-center justify-between hover:bg-gray-100 dark:hover:bg-neutral-700 transition-colors">
-                    <div class="truncate">
-                      <span class="font-mono text-sm">{{ serverConfig.protocol }}://{{ serverConfig.host }}:{{ serverConfig.port }}</span>
-                      <span class="ml-2 text-xs text-gray-500">{{ serverConfig.region }}</span>
-                    </div>
-                    <Icon :size="18" name="ri:arrow-right-s-fill" class="text-gray-600 dark:text-gray-300 hover:text-blue-500 transition-all duration-200" />
-                  </div>
-                </div>
-
-                <!-- 展开时的内容 -->
-                <div v-else class="border border-gray-200 dark:border-neutral-700 rounded-lg overflow-hidden animate-in fade-in slide-in-from-top-2 duration-300">
-                  <!-- 标题栏 -->
-                  <div @click="expandedNames = []"
-                    class="w-full cursor-pointer flex items-center justify-between px-4 py-3 bg-gray-50 dark:bg-neutral-800 hover:bg-gray-100 dark:hover:bg-neutral-700 transition-colors border-b border-gray-200 dark:border-neutral-700">
-                    <span class="flex items-center text-sm font-medium">
-                      <Icon :size="16" name="ri:settings-3-line" class="mr-2 text-gray-500" />
-                      {{ t('Server Configuration') }}
-                    </span>
-                    <Icon :size="18" name="ri:arrow-down-s-fill" class="text-gray-600 dark:text-gray-300 hover:text-blue-500 transition-all duration-200 transform" />
-                  </div>
-
-                  <!-- 配置表单 -->
-                  <div class="p-4 bg-white dark:bg-neutral-900">
-                    <div v-if="configAlert"
-                      class="mb-4 px-3 py-2 rounded bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 border border-red-200 dark:border-red-800 text-sm">
-                      {{ configAlert }}
-                    </div>
-
-                    <div class="space-y-4">
-                      <div>
-                        <label class="block text-sm font-medium mb-2 text-gray-700 dark:text-gray-300">{{ t('Server URL') }}</label>
-                        <n-input v-model:value="serverUrl" size="medium" type="text" :placeholder="'http://localhost:9000'" :status="urlValidationStatus"
-                          @blur="validateAndParseUrl" @input="onUrlInput" />
-                        <div v-if="urlError" class="mt-1 text-xs text-red-500">{{ urlError }}</div>
-                      </div>
-
-                      <div>
-                        <label class="block text-sm font-medium mb-2 text-gray-700 dark:text-gray-300">{{ t('Region') }}</label>
-                        <n-input v-model:value="serverConfig.region" size="medium" type="text" :placeholder="'us-east-1'" />
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
 
             <n-tabs type="segment" animated size="small" v-model:value="method">
               <n-tab-pane name="accessKeyAndSecretKey" :label="t('Key Login')" />
@@ -255,6 +202,58 @@ const onUrlInput = () => {
                     <n-input v-model:value="sts.sessionToken" autocomplete="new-password" type="text" :placeholder="t('Please enter STS session token')" />
                   </div>
                 </template>
+
+                <!-- 服务器配置折叠面板 -->
+                <div class="mb-2">
+                  <div class="transition-all duration-300 ease-in-out">
+                    <!-- 折叠时的卡片 -->
+                    <div v-if="!expandedNames.includes('server-config')" @click="expandedNames = ['server-config']" class="w-full cursor-pointer">
+                      <div
+                        class="rounded border border-gray-200 dark:border-neutral-700 bg-gray-50 dark:bg-neutral-800 px-4 py-2 flex items-center justify-between hover:bg-gray-100 dark:hover:bg-neutral-700 transition-colors">
+                        <div class="truncate">
+                          <span class="font-mono text-sm">{{ serverConfig.protocol }}://{{ serverConfig.host }}:{{ serverConfig.port }}</span>
+                          <span class="ml-2 text-xs text-gray-500">{{ serverConfig.region }}</span>
+                        </div>
+                        <Icon :size="18" name="ri:arrow-right-s-fill" class="text-gray-600 dark:text-gray-300 hover:text-blue-500 transition-all duration-200" />
+                      </div>
+                    </div>
+
+                    <!-- 展开时的内容 -->
+                    <div v-else class="border border-gray-200 dark:border-neutral-700 rounded-lg overflow-hidden animate-in fade-in slide-in-from-top-2 duration-300">
+                      <!-- 标题栏 -->
+                      <div @click="expandedNames = []"
+                        class="w-full cursor-pointer flex items-center justify-between px-4 py-3 bg-gray-50 dark:bg-neutral-800 hover:bg-gray-100 dark:hover:bg-neutral-700 transition-colors border-b border-gray-200 dark:border-neutral-700">
+                        <span class="flex items-center text-sm font-medium">
+                          <Icon :size="16" name="ri:settings-3-line" class="mr-2 text-gray-500" />
+                          {{ t('Server Configuration') }}
+                        </span>
+                        <Icon :size="18" name="ri:arrow-down-s-fill" class="text-gray-600 dark:text-gray-300 hover:text-blue-500 transition-all duration-200 transform" />
+                      </div>
+
+                      <!-- 配置表单 -->
+                      <div class="p-4 bg-white dark:bg-neutral-900">
+                        <div v-if="configAlert"
+                          class="mb-4 px-3 py-2 rounded bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 border border-red-200 dark:border-red-800 text-sm">
+                          {{ configAlert }}
+                        </div>
+
+                        <div class="space-y-4">
+                          <div>
+                            <label class="block text-sm font-medium mb-2 text-gray-700 dark:text-gray-300">{{ t('Server URL') }}</label>
+                            <n-input v-model:value="serverUrl" size="medium" type="text" :placeholder="'http://localhost:9000'" :status="urlValidationStatus"
+                              @blur="validateAndParseUrl" @input="onUrlInput" />
+                            <div v-if="urlError" class="mt-1 text-xs text-red-500">{{ urlError }}</div>
+                          </div>
+
+                          <div>
+                            <label class="block text-sm font-medium mb-2 text-gray-700 dark:text-gray-300">{{ t('Region') }}</label>
+                            <n-input v-model:value="serverConfig.region" size="medium" type="text" :placeholder="'us-east-1'" />
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
 
                 <button type="submit"
                   class="w-full py-3 px-4 inline-flex justify-center items-center gap-x-2 text-sm font-medium rounded-lg border border-transparent bg-blue-600 text-white hover:bg-blue-700 focus:outline-none focus:bg-blue-700 disabled:opacity-50 disabled:pointer-events-none">

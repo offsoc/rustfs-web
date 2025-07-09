@@ -14,6 +14,9 @@ const serverConfig = ref({
   region: 'us-east-1'
 })
 
+// 配置来源
+const configSource = ref<string>('')
+
 // 加载当前配置
 const loadCurrentConfig = async () => {
   const currentConfig = await configManager.loadConfig()
@@ -23,22 +26,24 @@ const loadCurrentConfig = async () => {
       serverConfig.value = serverConfigData
     }
   }
+
+  // 获取配置来源
+  const source = await configManager.getConfigSource()
+  configSource.value = source || 'default'
 }
 
 // 保存配置
 const saveConfig = async () => {
-  const saved = await configManager.saveConfig(serverConfig.value)
-  if (saved) {
-    message.success(t('Server configuration saved'))
-  } else {
-    message.info(t('Using public configuration, cannot save to localStorage'))
-  }
+  await configManager.saveConfig(serverConfig.value)
+  message.success(t('Server configuration saved'))
+  // 重新加载配置来源
+  await loadCurrentConfig()
 }
 
 // 清除配置
 const clearConfig = async () => {
   configManager.clearConfig()
-  message.success('Configuration cleared')
+  message.success(t('Configuration cleared'))
   await loadCurrentConfig()
 }
 
@@ -97,6 +102,16 @@ onMounted(async () => {
               <div><strong>API URL:</strong> {{ serverConfig.protocol }}://{{ serverConfig.host }}:{{ serverConfig.port }}/rustfs/admin/v3</div>
               <div><strong>S3 Endpoint:</strong> {{ serverConfig.protocol }}://{{ serverConfig.host }}:{{ serverConfig.port }}</div>
               <div><strong>Region:</strong> {{ serverConfig.region }}</div>
+              <div><strong>{{ t('Config Source') }}:</strong>
+                <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium"
+                  :class="{
+                    'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300': configSource === 'localStorage',
+                    'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300': configSource === 'config.json',
+                    'bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-300': configSource === 'runtimeconfig'
+                  }">
+                  {{ configSource }}
+                </span>
+              </div>
             </div>
           </div>
 

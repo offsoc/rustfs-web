@@ -6,7 +6,7 @@ export default defineNuxtPlugin({
     let finalConfig: any
 
     try {
-      // 使用 configManager 加载配置（内部优先级：config.json > localStorage > runtimeconfig）
+      // 使用 configManager 加载配置（内部优先级：localStorage > config.json > runtimeconfig）
       const userConfig = await configManager.loadConfig()
       if (userConfig) {
         finalConfig = { ...useRuntimeConfig().public, ...userConfig }
